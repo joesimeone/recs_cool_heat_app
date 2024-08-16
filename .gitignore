@@ -5,3 +5,7 @@
 
 
 data/**
+.Rdata
+.httr-oauth
+.DS_Store
+.quarto
