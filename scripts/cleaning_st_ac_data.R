@@ -6,10 +6,10 @@ library(janitor)
 
 recs_therm_info <- list(
 
-recs_therm = read_excel(here("recs_data", "recs_st_ac_2020.xlsx"),
+recs_therm = read_excel(here("data", "recs_st_ac_2020.xlsx"),
                          sheet = "data", skip = 4) %>% clean_names(),
 
-recs_rse  = read_excel(here("recs_data", "recs_st_ac_2020.xlsx"),
+recs_rse  = read_excel(here("data", "recs_st_ac_2020.xlsx"),
                          sheet = "rse", skip = 4) %>% clean_names()
 )
 
@@ -121,6 +121,9 @@ st_tbl_fin <- st_tbl_fin %>%
                         conf_int_lower = estimates - 1.96*std_error)
 
 
+write_csv(total_tbl_fin, here("data", "total_tbl_fin.csv"))
+write_csv(st_tbl_fin, here("data", "st_tbl_fin.csv"))
+
 
 
 st_tbl_fin %>% filter(stat == "pct"  & states == "Delaware") %>% ggplot(aes(x=cool_type, y=estimates)) +         
@@ -131,4 +134,3 @@ st_tbl_fin %>% filter(stat == "pct"  & states == "Delaware") %>% ggplot(aes(x=co
 
 
 
-st_mrg <- state.abb
