@@ -13,26 +13,13 @@ library(plotly)
 library(reactable)
 library(leaflet)
 
-st_tbl <- read_csv(here("data", "st_tbl_fin.csv"))
-
-
-st_tbl <- st_tbl %>% 
-  filter(cool_type != "all_cool_tot_per_mil") %>% 
-  mutate(cool_type_fac = 
-           case_when(
-             str_detect(cool_type, "wall_window") ~ "Wall or Window Unit",
-             str_detect(cool_type, "dehumidifier") ~ "Dehumidifer",
-             str_detect(cool_type, "central_ac") ~ "Central Air",
-             str_detect(cool_type, "ac_tot") | 
-               str_detect(cool_type, "any_ac") ~ "Any AC",
-             str_detect(cool_type, "ceiling_fan") ~ "Uses Ceiling Fan")) 
-
-
 
 
 ## Scripts to help server side calls ---------------------------
+source("scripts/source_data.R")
 source("scripts/graph_filter.R")
 source("scripts/create_st_ac_graph.R")
+source("scripts/create_leaflet_maps.R")
 
 ## Loading objects for UI ----------------------------------------
 state_search <- selectizeInput("state_search",
@@ -41,42 +28,53 @@ state_search <- selectizeInput("state_search",
 
 measure <- radioButtons(inputId = "measure_type",
                         label = "Pick your measure",
-                        choices = c("Counts per Million" = "count_per_million",
-                                    "Percentage" = "pct"))
+                        choices = c("Counts per Million" = "Counts Per Million",
+                                    "Percentage" = "Percentage"))
 
 cool_type <- selectizeInput("cool_search",
                             c("Pick an Indicator" = ""),
                             unique(st_tbl$cool_type_fac))
 
-cards <- list(
+cards <- list( 
               ac_plot = card(
                 full_screen = TRUE,
-                         card_header("Access to Home Cooling, 2020"),
+                         card_header(tags$div(
+                           "Access to Home Cooling, 2020",
+                           style = "text-align: center;",
+                           class = "align-items-center"
+                            )
+                        ),
                             layout_sidebar(
-                              sidebar = sidebar(
-                                state_search,
-                                measure
-                              ),
+                                    sidebar = sidebar(
+                                      state_search,
+                                      measure
+                            ),
                                 card_body(
                                   plotlyOutput("st_graph")
                                  
-                              )
-                              )
+                                )
+                          )
                 ),
+              
               ac_map = navset_card_underline(
-                # layout_sidebar(
-                #   sidebar = sidebar(
-                #               cool_type,
-                #               measure
-                #   ),
-                  nav_panel("RMSE Map", 
+               
+                  nav_panel(
+                    tags$div("RMSE Map", 
+                             style = "text-align: center;",
+                             class = "align-items-center"),
                             layout_sidebar(
                               sidebar = sidebar(
                                 cool_type,
                                 measure
                               ),
-                            leafletOutput("rmse_map")),
-                  nav_panel("Estimates Map", leafletOutput("est_map"))
+                            leafletOutput("rse_map"))),
+                  nav_panel("Estimates Map",
+                            layout_sidebar(
+                              sidebar = sidebar(
+                                cool_type,
+                                measure
+                              ),
+                            leafletOutput("est_map"))
                 )
               )
 )
@@ -129,7 +127,7 @@ server <- function(input, output) {
     req(input$state_search)
     req(input$measure_type)
 
-    filter_graph(states, stat,
+    filter_graph(st_tbl, states, stat,
                  input$state_search,
                  input$measure_type)
 
@@ -137,6 +135,21 @@ server <- function(input, output) {
     
 
     })
+  
+  maps_filter <- reactive({
+
+    req(input$cool_search)
+    req(input$measure_type)
+
+    filter_graph(st_tbl_shp, cool_type_fac, stat,
+                 input$cool_search,
+                 input$measure_type)
+
+
+
+
+  })
+
   
 
   
@@ -149,6 +162,26 @@ server <- function(input, output) {
                      
                     })
                     
+
+
+output$rse_map <- renderLeaflet({
+  
+  #validate(need(nrow(state_filter()) > 0, "No data available for the selected inputs."))
+  
+  render_rse_map(maps_filter())
+  
+})
+
+
+
+output$est_map <- renderLeaflet({
+  
+  #validate(need(nrow(state_filter()) > 0, "No data available for the selected inputs."))
+  
+  render_est_map(maps_filter())
+  
+})
+
 }
 
 # Run the application 

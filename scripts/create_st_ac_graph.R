@@ -19,7 +19,7 @@ color <- c("black", "#a40000", "#16317d", "#007e2f", "#e78429")
                                      "Lower bound:", round(conf_int_lower, 2), "<br>",
                                     "RSE:", round(estimates_rse, 2), "<br>")
                             )) +         
-              geom_point(shape = 21, size = 2.5) +
+              geom_point(color = "white", shape = 21, size = 2.5) +
               geom_errorbar(aes(ymin = conf_int_lower, ymax = conf_int_upper), 
                             linetype = "dashed", width = .1) + 
               theme(legend.position="none",
